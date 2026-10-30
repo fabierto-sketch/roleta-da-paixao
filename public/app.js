@@ -19,4 +19,17 @@ async function start(){stream=await navigator.mediaDevices.getUserMedia({audio:t
 async function signal(d){try{if(!peer){stream=await navigator.mediaDevices.getUserMedia({audio:true,video:true});$("local").srcObject=stream;peer=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]});stream.getTracks().forEach(t=>peer.addTrack(t,stream));peer.ontrack=e=>$("remote").srcObject=e.streams[0];peer.onicecandidate=e=>{if(e.candidate)socket.emit("signal",{code:s.code,data:{candidate:e.candidate}})}}if(d.description){await peer.setRemoteDescription(d.description);if(d.description.type==="offer"){let a=await peer.createAnswer();await peer.setLocalDescription(a);socket.emit("signal",{code:s.code,data:{description:peer.localDescription}})}}else if(d.candidate)await peer.addIceCandidate(d.candidate)}catch(e){console.error(e)}}
 $("call").onclick=()=>start().catch(e=>$("gameErr").textContent="Câmara/microfone: "+e.message);$("hang").onclick=()=>{if(peer)peer.close();peer=null;if(stream)stream.getTracks().forEach(t=>t.stop());$("local").srcObject=null;$("remote").srcObject=null};
 let room=new URLSearchParams(location.search).get("room");if(room)$("code").value=room;
-try{let saved=JSON.parse(localStorage.getItem("roletaSession")||"null");if(saved&&saved.code&&saved.key){await api(`/api/rooms/${saved.code}/state`);await enter(saved,saved.name||"Jogador");}}catch(e){localStorage.removeItem("roletaSession");}
+async function restoreSession(){
+  try {
+    let saved = JSON.parse(localStorage.getItem("roletaSession") || "null");
+
+    if (saved && saved.code && saved.key) {
+      await api(`/api/rooms/${saved.code}/state`);
+      await enter(saved, saved.name || "Jogador");
+    }
+  } catch(e) {
+    localStorage.removeItem("roletaSession");
+  }
+}
+
+restoreSession();
