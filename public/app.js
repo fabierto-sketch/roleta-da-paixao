@@ -16,27 +16,36 @@ $("spin").onclick=async()=>{
   const wheel=document.querySelector(".wheel");
   const spinButton=$("spin");
 
-  try{
-    spinButton.disabled=true;
-    wheel.classList.remove("spinning");
-    void wheel.offsetWidth;
-    wheel.classList.add("spinning");
+  spinButton.disabled=true;
 
+  const animation=wheel.animate(
+    [
+      {transform:"rotate(0deg)"},
+      {transform:"rotate(1800deg)"}
+    ],
+    {
+      duration:3500,
+      easing:"cubic-bezier(.12,.75,.18,1)"
+    }
+  );
+
+  try{
     let d=await api(`/api/rooms/${s.code}/spin`,{category:cat});
 
-    setTimeout(async()=>{
-      $("catName").textContent=cats.find(c=>c[0]===d.challenge.category)[1];
-      $("prompt").textContent=d.challenge.prompt;
-      $("challenge").classList.remove("hidden");
-      $("gameErr").textContent="";
-      await refresh();
-      spinButton.disabled=false;
-    },3500);
+    await animation.finished;
+
+    $("catName").textContent=cats.find(c=>c[0]===d.challenge.category)[1];
+    $("prompt").textContent=d.challenge.prompt;
+    $("challenge").classList.remove("hidden");
+    $("gameErr").textContent="";
+
+    await refresh();
 
   }catch(e){
-    wheel.classList.remove("spinning");
-    spinButton.disabled=false;
+    animation.cancel();
     $("gameErr").textContent=e.message;
+  }finally{
+    spinButton.disabled=false;
   }
 };
 $("done").onclick=async()=>{try{await api(`/api/rooms/${s.code}/score`,{delta:1});$("challenge").classList.add("hidden");await refresh()}catch(e){$("gameErr").textContent=e.message}};
