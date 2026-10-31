@@ -1,18 +1,94 @@
 const $=id=>document.getElementById(id);let s=null,socket=null,cat=null,peer=null,stream=null;
-const cats=[["romance","❤️ Romance"],["loucuras","🤪 Loucuras"],["confissoes","🤫 Confissões"],["seducao","🔥 Sedução"],["conhecimento","🧠 Conhecimento"],["distancia","🌍 Distância"],["surpresa","🎁 Surpresa"],["tudo","🎡 Tudo ou Nada"]];
+const cats=[["romance","❤️ Romanc
+  2
+  3
+  4
+  5
+  6
+  7
+  8
+  9
+ 10
+ 11
+ 12
+ 13
+ 14
+ 15
+ 16
+ 17
+ 18
+ 19
+ 20
+ 21
+ 22
+ 23
+ 24
+ 25
+ 26
+ 27
+ 28
+ 29
+ 30
+ 31
+ 32
+ 33
+ 34
+ 35
+ 36
+ 37
+ 38
+ 39
+ 40
+ 41
+ 42
+ 43
+ 44
+ 45
+ 46
+ 47
+ 48
+ 49
+ 50
+ 51
+ 52
+ 53
+ 54
+ 55
+ 56
+ 57
+ 58
+ 59
+ 60
+ 61
+ 62
+ 63
+ 64
+ 65
+ 66
+ 67
+ 68
+ 69
+ 70
+ 71
+ 72
+ 73
+ 74
+ 75
+ 76
+ 77
+ 78
+ 79
+ 80
+ 81
+ 82
+ 83
+ 84
+ 85
+e"],["loucuras","🤪 Loucuras"],["confissoes","🤫 Confissões"],["seducao","🔥 Sedução"],["conhecimento","🧠 Conhecimento"],["distancia","🌍 Distância"],["surpresa","🎁 Surpresa"],["tudo","🎡 Tudo ou Nada"]];
 const hdr=()=>({"Content-Type":"application/json","x-player-key":s?.key||""});
 async function api(url,body){let r=await fetch(url,{method:body?"POST":"GET",headers:hdr(),body:body?JSON.stringify(body):undefined}),d=await r.json();if(!r.ok)throw Error(d.error||"Erro");return d}
 function esc(x){return String(x).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-async function enter(d,name){s={...d,name};localStorage.setItem("roletaSession",JSON.stringify(s));$("home").classList.add("hidden");$("game").classList.remove("hidden");$("room").textContent=d.code;$("customCat").innerHTML=cats.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join("");$("cats").innerHTML=cats.map(c=>`<button data-cat="${c[0]}">${c[1]}</button>`).join("");document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{cat=b.dataset.cat;document.querySelectorAll("[data-cat]").forEach(x=>x.classList.toggle("active",x===b))});socket=io();socket.emit("join-room",{code:d.code});socket.on("refresh",refresh);socket.on("chat",m=>chat(m.name,m.message));socket.on("signal",signal);await refresh()}
-$("create").onclick=async()=>{try{let d=await api("/api/rooms",{name:$("createName").value});await enter(d,$("createName").value)}catch(e){$("homeErr").textContent=e.message}};
-$("join").onclick=async()=>{try{let d=await api("/api/rooms/join",{code:$("code").value,name:$("joinName").value});await enter(d,$("joinName").value)}catch(e){$("homeErr").textContent=e.message}};
-async function refresh(){try{let d=await api(`/api/rooms/${s.code}/state`);$("aName").textContent=d.names.find(x=>x.slot==="A")?.display_name||"Jogador A";$("bName").textContent=d.names.find(x=>x.slot==="B")?.display_name||"À espera...";$("aScore").textContent=d.scores.A||0;$("bScore").textContent=d.scores.B||0;$("used").textContent=`${d.used} de ${d.total} desafios utilizados`; $("history").innerHTML=d.history.map(h=>`<div class="hist"><b>${esc(h.category)}</b> · ${esc(h.prompt)}<br><small>${new Date(h.played_at).toLocaleString("pt-PT")}</small></div>`).join("")||"Ainda sem desafios."}catch(e){$("gameErr").textContent=e.message}}
-$("spin").onclick=async()=>{
-  if(!cat){
-    $("gameErr").textContent="Escolham uma categoria primeiro.";
-    return;
-  }
-
+async function enter(d,name){s={...d,name};localStorage.setItem("roletaSession",JSON.stringify(s));$("home").classList.add("hidden");$("game").classList.remove("hidden");$("room").textContent=d.code;$("customCat").innerHTML=cats.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join("");$("cats").innerHTML=cats.map(c=>`<button data-cat="${c[0]}">${c[1]}</button>`).join("");document.querySelectorAll("[data-cat]").forEach(b=>b.onclick=()=>{cat=b.dataset.cat;document.querySelectorAll("[data-cat]").forEach(x=>x.classList.toggle("active",x===b))});socket=io();socket.emit("join-room",{code:d.code});socket.on("refresh",refresh);socket.on("challenge",async data=>{
   const wheel=document.querySelector(".wheel");
   const spinButton=$("spin");
 
@@ -30,25 +106,43 @@ $("spin").onclick=async()=>{
   );
 
   try{
-    let d=await api(`/api/rooms/${s.code}/spin`,{category:cat});
-
     await animation.finished;
 
-    $("catName").textContent=cats.find(c=>c[0]===d.challenge.category)[1];
-    $("prompt").textContent=d.challenge.prompt;
+    const category=cats.find(c=>c[0]===data.challenge.category);
+    const playerName=data.playerSlot==="A"?$("aName").textContent:$("bName").textContent;
+
+    $("catName").textContent=category[1]+" · Sorteado por "+playerName;
+    $("prompt").textContent=data.challenge.prompt;
     $("challenge").classList.remove("hidden");
     $("gameErr").textContent="";
 
     await refresh();
-
   }catch(e){
-    animation.cancel();
-    $("gameErr").textContent=e.message;
+    console.error(e);
   }finally{
     spinButton.disabled=false;
   }
+});socket.on("chat",m=>chat(m.name,m.message));socket.on("signal",signal);await refresh()}
+$("create").onclick=async()=>{try{let d=await api("/api/rooms",{name:$("createName").value});await enter(d,$("createName").value)}catch(e){$("homeErr").textContent=e.message}};
+$("join").onclick=async()=>{try{let d=await api("/api/rooms/join",{code:$("code").value,name:$("joinName").value});await enter(d,$("joinName").value)}catch(e){$("homeErr").textContent=e.message}};
+async function refresh(){try{let d=await api(`/api/rooms/${s.code}/state`);$("aName").textContent=d.names.find(x=>x.slot==="A")?.display_name||"Jogador A";$("bName").textContent=d.names.find(x=>x.slot==="B")?.display_name||"À espera...";$("aScore").textContent=d.scores.A||0;$("bScore").textContent=d.scores.B||0;$("used").textContent=`${d.used} de ${d.total} desafios utilizados`; $("history").innerHTML=d.history.map(h=>`<div class="hist"><b>${esc(h.category)}</b> · ${esc(h.prompt)}<br><small>${new Date(h.played_at).toLocaleString("pt-PT")}</small></div>`).join("")||"Ainda sem desafios."}catch(e){$("gameErr").textContent=e.message}}
+$("spin").onclick=async()=>{
+  if(!cat){
+    $("gameErr").textContent="Escolham uma categoria primeiro.";
+    return;
+  }
+
+  $("spin").disabled=true;
+
+  try{
+    await api(`/api/rooms/${s.code}/spin`,{category:cat});
+  }catch(e){
+    $("spin").disabled=false;
+    $("gameErr").textContent=e.message;
+  }
 };
-$("done").onclick=async()=>{try{await api(`/api/rooms/${s.code}/score`,{delta:1});$("challenge").classList.add("hidden");await refresh()}catch(e){$("gameErr").textContent=e.message}};
+  
+  $("done").onclick=async()=>{try{await api(`/api/rooms/${s.code}/score`,{delta:1});$("challenge").classList.add("hidden");await refresh()}catch(e){$("gameErr").textContent=e.message}};
 $("skip").onclick=()=>{$("challenge").classList.add("hidden");$("spin").click()};
 $("saveCustom").onclick=async()=>{try{await api(`/api/rooms/${s.code}/custom`,{category:$("customCat").value,prompt:$("customText").value});$("customText").value="";$("customMsg").textContent="Desafio guardado! ❤️";await refresh()}catch(e){$("customMsg").textContent=e.message}};
 $("reset").onclick=async()=>{if(confirm("Reiniciar o ciclo? O histórico fica guardado.")){await api(`/api/rooms/${s.code}/reset`,{});await refresh()}};
