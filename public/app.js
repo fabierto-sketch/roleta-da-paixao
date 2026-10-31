@@ -7,7 +7,38 @@ async function enter(d,name){s={...d,name};localStorage.setItem("roletaSession",
 $("create").onclick=async()=>{try{let d=await api("/api/rooms",{name:$("createName").value});await enter(d,$("createName").value)}catch(e){$("homeErr").textContent=e.message}};
 $("join").onclick=async()=>{try{let d=await api("/api/rooms/join",{code:$("code").value,name:$("joinName").value});await enter(d,$("joinName").value)}catch(e){$("homeErr").textContent=e.message}};
 async function refresh(){try{let d=await api(`/api/rooms/${s.code}/state`);$("aName").textContent=d.names.find(x=>x.slot==="A")?.display_name||"Jogador A";$("bName").textContent=d.names.find(x=>x.slot==="B")?.display_name||"À espera...";$("aScore").textContent=d.scores.A||0;$("bScore").textContent=d.scores.B||0;$("used").textContent=`${d.used} de ${d.total} desafios utilizados`; $("history").innerHTML=d.history.map(h=>`<div class="hist"><b>${esc(h.category)}</b> · ${esc(h.prompt)}<br><small>${new Date(h.played_at).toLocaleString("pt-PT")}</small></div>`).join("")||"Ainda sem desafios."}catch(e){$("gameErr").textContent=e.message}}
-$("spin").onclick=async()=>{if(!cat){$("gameErr").textContent="Escolham uma categoria primeiro.";return}try{let d=await api(`/api/rooms/${s.code}/spin`,{category:cat});$("catName").textContent=cats.find(c=>c[0]===d.challenge.category)[1];$("prompt").textContent=d.challenge.prompt;$("challenge").classList.remove("hidden");$("gameErr").textContent="";await refresh()}catch(e){$("gameErr").textContent=e.message}};
+$("spin").onclick=async()=>{
+  if(!cat){
+    $("gameErr").textContent="Escolham uma categoria primeiro.";
+    return;
+  }
+
+  const wheel=document.querySelector(".wheel");
+  const spinButton=$("spin");
+
+  try{
+    spinButton.disabled=true;
+    wheel.classList.remove("spinning");
+    void wheel.offsetWidth;
+    wheel.classList.add("spinning");
+
+    let d=await api(`/api/rooms/${s.code}/spin`,{category:cat});
+
+    setTimeout(async()=>{
+      $("catName").textContent=cats.find(c=>c[0]===d.challenge.category)[1];
+      $("prompt").textContent=d.challenge.prompt;
+      $("challenge").classList.remove("hidden");
+      $("gameErr").textContent="";
+      await refresh();
+      spinButton.disabled=false;
+    },3500);
+
+  }catch(e){
+    wheel.classList.remove("spinning");
+    spinButton.disabled=false;
+    $("gameErr").textContent=e.message;
+  }
+};
 $("done").onclick=async()=>{try{await api(`/api/rooms/${s.code}/score`,{delta:1});$("challenge").classList.add("hidden");await refresh()}catch(e){$("gameErr").textContent=e.message}};
 $("skip").onclick=()=>{$("challenge").classList.add("hidden");$("spin").click()};
 $("saveCustom").onclick=async()=>{try{await api(`/api/rooms/${s.code}/custom`,{category:$("customCat").value,prompt:$("customText").value});$("customText").value="";$("customMsg").textContent="Desafio guardado! ❤️";await refresh()}catch(e){$("customMsg").textContent=e.message}};
